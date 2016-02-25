@@ -1,8 +1,8 @@
 # Configuration of SonarQube Runner
 class sonarqube::runner::config (
-  $package_name,
-  $version,
-  $installroot,
+  $package_name = "scanner",
+  $version = "2.5",
+  $installroot = "/usr/local/",
   $sonarqube_server = 'http://localhost:9000',
 
   # the same JDBC configuration is located in init.pp
