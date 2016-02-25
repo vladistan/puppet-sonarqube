@@ -8,6 +8,7 @@ class sonarqube::params {
     'darwin'  => 'macosx',
     default   => 'linux',
   }
+
   if $arch1 != 'macosx' {
     $arch2 = $::architecture ? {
       'x86_64' => 'x86-64',
@@ -20,6 +21,7 @@ class sonarqube::params {
       default  => 'universal-32',
     }
   }
+  
   $arch = "${arch1}-${arch2}"
 
 }

@@ -23,7 +23,7 @@ class sonarqube (
   $port             = 9000,
   $portAjp          = -1,
   $download_url     = 'https://sonarsource.bintray.com/Distribution/sonarqube',
-  $download_dir     = '/usr/local/src',
+  $download_dir     = '/tmp',
   $context_path     = '/',
   $arch             = $sonarqube::params::arch,
   $https            = {},
@@ -53,16 +53,15 @@ class sonarqube (
   $config           = undef,
 ) inherits sonarqube::params {
   validate_absolute_path($download_dir)
+
   Exec {
     path => '/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin',
   }
+
   File {
     owner => $user,
     group => $group,
   }
-
-  # wget from https://github.com/maestrodev/puppet-wget
-  include wget
 
   $package_name = 'sonarqube'
 
@@ -71,124 +70,101 @@ class sonarqube (
   } else {
     $real_home = '/var/local/sonar'
   }
+
   Sonarqube::Move_to_home {
     home => $real_home,
   }
 
   $extensions_dir = "${real_home}/extensions"
+
   $plugin_dir = "${extensions_dir}/plugins"
 
   $installdir = "${installroot}/${service}"
+
   $tmpzip = "${download_dir}/${package_name}-${version}.zip"
+
+  # /usr/local/sonar/bin/linux-x86-64/
   $script = "${installdir}/bin/${arch}/sonar.sh"
 
-  if ! defined(Package[unzip]) {
-    package { 'unzip':
-      ensure => present,
-      before => Exec[untar],
-    }
-  }
-
+  # create user, group to run sonarqube
   user { $user:
     ensure     => present,
     home       => $real_home,
     managehome => false,
     system     => $user_system,
   }
-  ->
+
   group { $group:
     ensure => present,
     system => $user_system,
   }
-  ->
-  wget::fetch { 'download-sonar':
-    source      => "${download_url}/${package_name}-${version}.zip",
-    destination => $tmpzip,
+
+  # download the sonarqube binary and unpack in the install directory
+  archive { "${tmpzip}":
+    ensure        => present,
+    extract       => true,
+    extract_path  => "${installroot}",
+    source        => "${download_url}/${package_name}-${version}.zip",
+    user          => $user,
+    group         => $group,
+    creates       => "/usr/local/${package_name}-${version}/COPYING",
+    notify        => Service['sonarqube'],
+    require       => File["${installroot}/${package_name}-${version}"],
   }
-  ->
-  # ===== Create folder structure =====
-  # so uncompressing new sonar versions at update time use the previous sonar home,
-  # installing new extensions and plugins over the old ones, reusing the db,...
 
   # Sonar home
   file { $real_home:
     ensure => directory,
     mode   => '0700',
   }
-  ->
+
   file { "${installroot}/${package_name}-${version}":
     ensure => directory,
   }
-  ->
+
   file { $installdir:
-    ensure => link,
-    target => "${installroot}/${package_name}-${version}",
-    notify => Service['sonarqube'],
-  }
-  ->
-  sonarqube::move_to_home { 'data': }
-  ->
-  sonarqube::move_to_home { 'extras': }
-  ->
-  sonarqube::move_to_home { 'extensions': }
-  ->
-  sonarqube::move_to_home { 'logs': }
-  ->
-  # ===== Install SonarQube =====
-  exec { 'untar':
-    command => "unzip -o ${tmpzip} -d ${installroot} && chown -R ${user}:${group} ${installroot}/${package_name}-${version} && chown -R ${user}:${group} ${real_home}",
-    creates => "${installroot}/${package_name}-${version}/bin",
+    ensure  => link,
+    target  => "${installroot}/${package_name}-${version}",
     notify  => Service['sonarqube'],
+    require => File["${installroot}/${package_name}-${version}"]
   }
-  ->
+
+  #sonarqube::move_to_home { 'data': }
+  #sonarqube::move_to_home { 'extras': }
+  #sonarqube::move_to_home { 'extensions': }
+  #sonarqube::move_to_home { 'logs': }
+
   file { $script:
     mode    => '0755',
     content => template('sonarqube/sonar.sh.erb'),
+    require => File["$installdir"],
   }
-  ->
+
   file { "/etc/init.d/${service}":
     ensure => link,
     target => $script,
+    require => File[$script],
   }
 
   # Sonar configuration files
   if $config != undef {
     file { "${installdir}/conf/sonar.properties":
       source  => $config,
-      require => Exec['untar'],
       notify  => Service['sonarqube'],
       mode    => '0600',
     }
   } else {
     file { "${installdir}/conf/sonar.properties":
       content => template('sonarqube/sonar.properties.erb'),
-      require => Exec['untar'],
       notify  => Service['sonarqube'],
       mode    => '0600',
     }
   }
 
-  file { '/tmp/cleanup-old-plugin-versions.sh':
-    content => template("${module_name}/cleanup-old-plugin-versions.sh.erb"),
-    mode    => '0755',
-  }
-  ->
-  file { '/tmp/cleanup-old-sonarqube-versions.sh':
-    content => template("${module_name}/cleanup-old-sonarqube-versions.sh.erb"),
-    mode    => '0755',
-  }
-  ->
-  exec { 'remove-old-versions-of-sonarqube':
-    command     => "/tmp/cleanup-old-sonarqube-versions.sh ${installroot} ${version}",
-    path        => '/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin',
-    refreshonly => true,
-    subscribe   => File["${installroot}/${package_name}-${version}"],
-  }
-
-  # The plugins directory. Useful to later reference it from the plugin definition
-  file { $plugin_dir:
-    ensure => directory,
-  }
+  # The plugins directory.
+  #file { $plugin_dir:
+  #  ensure => directory,
+  #}
 
   service { 'sonarqube':
     ensure     => running,

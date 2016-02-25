@@ -11,11 +11,6 @@ CLOBBER.include('.tmp', '.librarian')
 
 ENV['STRICT_VARIABLES']='yes' unless Gem::Version.new(Puppet.version) < Gem::Version.new("3.5.0")
 
-task :librarian_spec_prep do
-  sh "librarian-puppet install --path=spec/fixtures/modules/"
-end
-task :spec_prep => :librarian_spec_prep
-
 Rake::Task[:lint].clear # workaround https://github.com/rodjek/puppet-lint/issues/331
 PuppetLint.configuration.relative = true # https://github.com/rodjek/puppet-lint/pull/334
 PuppetLint::RakeTask.new :lint do |config|
