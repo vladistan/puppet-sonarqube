@@ -1,19 +1,20 @@
 # Installation of SonarQube Runner
 class sonarqube::runner::install (
-  $package_name = "scanner",
+  $package_name = "sonar-scanner",
   $version = "2.5",
   $installroot = "/usr/local/",
-  $download_url = "https://sonarsource.bintray.com/Distribution/sonar-scanner-cli"
+  $download_url = "https://sonarsource.bintray.com/Distribution/sonar-scanner-cli",
+  $tmp_dir = '/tmp',
 ) {
   include ::archive
 
-  $tmpzip = "/tmp/${package_name}-dist-${version}.zip"
 
-  archive { "${tmpzip}" :
+  archive { "${tmp_dir}/${package_name}-${version}.zip" :
     ensure      => present,
-    source      => "${download_url}/${version}/sonar-runner-dist-${version}.zip",
+    source      => "${download_url}/${package_name}-${version}.zip",
     extract     => true,
     extract_path  => "${installroot}",
+    creates     => "${installroot}${package_name}-${version}",
   }
 
   # Sonar settings for terminal sessions.
