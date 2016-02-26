@@ -1,5 +1,5 @@
-# Installation of SonarQube Runner
-class sonarqube::runner::install (
+# Installation of SonarQube scanner
+class sonarqube::scanner::install (
   $package_name = "sonar-scanner",
   $version = "2.5",
   $installroot = "/usr/local/",

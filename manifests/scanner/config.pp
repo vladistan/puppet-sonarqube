@@ -1,4 +1,4 @@
-# Configuration of SonarQube Runner
+# Configuration of SonarQube scanner
 class sonarqube::runner::config (
   $package_name = "sonar-scanner",
   $version = "2.5",

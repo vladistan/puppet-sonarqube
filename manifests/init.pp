@@ -100,16 +100,16 @@ class sonarqube (
   }
 
   # download the sonarqube binary and unpack in the install directory
-  archive { "${tmpzip}":
-    ensure        => present,
-    extract       => true,
-    extract_path  => "${installroot}",
-    source        => "${download_url}/${package_name}-${version}.zip",
-    user          => $user,
-    group         => $group,
-    creates       => "/usr/local/${package_name}-${version}/COPYING",
-    notify        => Service['sonarqube'],
-    require       => File["${installroot}/${package_name}-${version}"],
+  archive { $tmpzip:
+    ensure       => present,
+    extract      => true,
+    extract_path => $installroot,
+    source       => "${download_url}/${package_name}-${version}.zip",
+    user         => $user,
+    group        => $group,
+    creates      => "/usr/local/${package_name}-${version}/COPYING",
+    notify       => Service['sonarqube'],
+    require      => File["${installroot}/${package_name}-${version}"],
   }
 
   # Sonar home
@@ -126,7 +126,7 @@ class sonarqube (
     ensure  => link,
     target  => "${installroot}/${package_name}-${version}",
     notify  => Service['sonarqube'],
-    require => File["${installroot}/${package_name}-${version}"]
+    require => File["${installroot}/${package_name}-${version}"],
   }
 
   #sonarqube::move_to_home { 'data': }
@@ -137,21 +137,21 @@ class sonarqube (
   file { $script:
     mode    => '0755',
     content => template('sonarqube/sonar.sh.erb'),
-    require => File["$installdir"],
+    require => File[$installdir],
   }
 
   file { "/etc/init.d/${service}":
-    ensure => link,
-    target => $script,
+    ensure  => link,
+    target  => $script,
     require => File[$script],
   }
 
   # Sonar configuration files
   if $config != undef {
     file { "${installdir}/conf/sonar.properties":
-      source  => $config,
-      notify  => Service['sonarqube'],
-      mode    => '0600',
+      source => $config,
+      notify => Service['sonarqube'],
+      mode   => '0600',
     }
   } else {
     file { "${installdir}/conf/sonar.properties":
