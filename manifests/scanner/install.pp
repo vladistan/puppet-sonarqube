@@ -16,6 +16,11 @@ class sonarqube::scanner::install (
     extract_path  => "${installroot}",
     creates     => "${installroot}${package_name}-${version}",
   }
+  
+  file { '/usr/local/sonar-runner':
+      ensure => 'link',
+      target => "${installroot}${package_name}-${version}",
+  }
 
   # Sonar settings for terminal sessions.
   file { '/etc/profile.d/sonarhome.sh':
