@@ -7,6 +7,8 @@ class sonarqube::scanner (
     $download_url = "https://sonarsource.bintray.com/Distribution/sonar-scanner-cli",
     $installroot = "/usr/local/",
     $sonarqube_server = 'http://localhost:9000',
+    $sonar_scanner_user = 'admin',
+    $sonar_scanner_password = 'admin',
 ) {
 
   validate_string($package_name)
@@ -28,6 +30,8 @@ class sonarqube::scanner (
     version          => $version,
     installroot      => $installroot,
     sonarqube_server => $sonarqube_server,
+    sonar_scanner_user => $sonar_scanner_user,
+    sonar_scanner_password => $sonar_scanner_password,
   } ~>
   anchor { 'sonarqube::scanner::end': }
 }

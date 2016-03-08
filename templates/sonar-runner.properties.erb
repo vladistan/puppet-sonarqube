@@ -19,5 +19,5 @@ sonar.jdbc.password=<%= @jdbc['password'] %>
 #sonar.sourceEncoding=UTF-8
 
 #----- Security (when 'sonar.forceAuthentication' is set to 'true')
-#sonar.login=admin
-#sonar.password=admin
+sonar.login=<%= @sonar_scanner_user %>
+sonar.password=<%=@sonar_scanner_password %>

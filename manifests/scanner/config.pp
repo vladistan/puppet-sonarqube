@@ -8,6 +8,9 @@ class sonarqube::scanner::config (
 
   # JDBC not used used for SonarQube 5.2+
   $jdbc             = { },
+  
+  $sonar_scanner_user = 'admin',
+  $sonar_scanner_password = 'admin',
 
 ) {
   # Sonar Runner configuration file
